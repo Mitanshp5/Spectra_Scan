@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Industrial Dark Theme - SpectraScan */
+    --background: 240 10% 6%;
+    --foreground: 210 20% 90%;
+
+    --card: 240 8% 8%;
+    --card-foreground: 210 20% 90%;
+
+    --popover: 240 8% 10%;
+    --popover-foreground: 210 20% 90%;
+
+    /* Electric Cyan Primary */
+    --primary: 187 100% 50%;
+    --primary-foreground: 240 10% 6%;
+
+    /* Deep Secondary */
+    --secondary: 240 8% 14%;
+    --secondary-foreground: 210 20% 90%;
+
+    --muted: 240 8% 12%;
+    --muted-foreground: 210 15% 60%;
+
+    --accent: 187 100% 50%;
+    --accent-foreground: 240 10% 6%;
+
+    /* Neon Success Green */
+    --success: 158 100% 50%;
+    --success-foreground: 240 10% 6%;
+
+    /* Amber Warning */
+    --warning: 38 100% 50%;
+    --warning-foreground: 240 10% 6%;
+
+    /* Error Red */
+    --destructive: 348 100% 61%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 8% 18%;
+    --input: 240 8% 14%;
+    --ring: 187 100% 50%;
+
+    --radius: 0.375rem;
+
+    /* Glow Effects */
+    --glow-primary: 0 0 20px hsl(187 100% 50% / 0.5);
+    --glow-success: 0 0 20px hsl(158 100% 50% / 0.5);
+    --glow-warning: 0 0 20px hsl(38 100% 50% / 0.5);
+    --glow-error: 0 0 20px hsl(348 100% 61% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-card;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-primary/30 rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
+}
+
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  }
+
+  .border-glow {
+    box-shadow: var(--glow-primary);
+  }
+
+  .border-glow-success {
+    box-shadow: var(--glow-success);
+  }
+
+  .border-glow-warning {
+    box-shadow: var(--glow-warning);
+  }
+
+  .border-glow-error {
+    box-shadow: var(--glow-error);
+  }
+}
