@@ -124,9 +124,9 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center gap-4">
             <StatusBadge status={status} />
-            <Button variant="outline" size="icon">
+            {/* <Button variant="outline" size="icon">
               <Settings className="h-5 w-5" />
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -158,7 +158,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="p-6">
             <div className="flex items-center gap-3 mb-2">
               <Database className="h-5 w-5 text-primary" />
@@ -186,7 +186,7 @@ const Dashboard = () => {
             </div>
             <p className="text-3xl font-bold font-mono text-warning">97.8%</p>
           </Card>
-        </div>
+        </div> */}
 
         {/* Progress */}
         {(status === "scanning" || status === "processing") && (

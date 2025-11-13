@@ -98,7 +98,7 @@ const Results = () => {
 
         {/* Defect Visualization */}
         <DefectOverlay
-          imageUrl="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&h=1000&fit=crop"
+          imageUrl="https://www.partfinder.me/assets/theme/pf-main/images/banner/parts/car-door.png"
           defects={defects}
         />
 
