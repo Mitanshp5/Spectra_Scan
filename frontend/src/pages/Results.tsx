@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DefectOverlay, Defect } from "@/components/DefectOverlay";
@@ -7,20 +7,42 @@ import { DefectTable } from "@/components/DefectTable";
 import { ArrowLeft, RotateCcw, Download } from "lucide-react";
 import { toast } from "sonner";
 
-// Mock defect data
-const mockDefects: Defect[] = [
-  { id: "DEF001", type: "Scratch", x: 25, y: 15, width: 8, height: 3, confidence: 0.95, severity: "high" },
-  { id: "DEF002", type: "Paint Bubble", x: 45, y: 30, width: 5, height: 5, confidence: 0.89, severity: "medium" },
-  { id: "DEF003", type: "Dust Particle", x: 60, y: 20, width: 3, height: 2, confidence: 0.76, severity: "low" },
-  { id: "DEF004", type: "Orange Peel", x: 70, y: 50, width: 12, height: 8, confidence: 0.92, severity: "medium" },
-  { id: "DEF005", type: "Color Mismatch", x: 30, y: 60, width: 15, height: 10, confidence: 0.88, severity: "high" },
-  { id: "DEF006", type: "Scratch", x: 80, y: 70, width: 6, height: 2, confidence: 0.94, severity: "high" },
-  { id: "DEF007", type: "Dust Particle", x: 15, y: 80, width: 2, height: 2, confidence: 0.72, severity: "low" },
-];
-
 const Results = () => {
   const navigate = useNavigate();
-  const [defects] = useState<Defect[]>(mockDefects);
+  const { scan_id } = useParams();
+  const [defects, setDefects] = useState<Defect[]>([]);
+  const [summary, setSummary] = useState<any>(null);
+  const [scanDate, setScanDate] = useState(new Date());
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (!scan_id) {
+        toast.error("No scan ID provided.");
+        navigate("/");
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:8000/api/scan/results/${scan_id}`);
+        const data = await response.json();
+
+        if (data.status === "complete") {
+          setDefects(data.defects || []);
+          setSummary(data.summary || {});
+          setScanDate(data.scan_date ? new Date(data.scan_date * 1000) : new Date());
+          toast.success("Scan results loaded.");
+        } else {
+          toast.warning("Scan is not complete or results are not available yet.");
+        }
+      } catch (error) {
+        console.error("Failed to fetch results:", error);
+        toast.error("Failed to fetch scan results.");
+        navigate("/");
+      }
+    };
+
+    fetchResults();
+  }, [scan_id, navigate]);
 
   const handleNewScan = () => {
     toast.success("Redirecting to dashboard");
@@ -28,11 +50,12 @@ const Results = () => {
   };
 
   const handleDownloadReport = () => {
-    toast.success("Generating PDF report...");
-    // Mock PDF generation
-    setTimeout(() => {
-      toast.success("Report downloaded successfully");
-    }, 1500);
+    if (scan_id) {
+      window.open(`http://localhost:8000/api/scan/report/${scan_id}`, "_blank");
+      toast.success("Report opened in a new tab.");
+    } else {
+      toast.error("Scan ID is not available to generate a report.");
+    }
   };
 
   const criticalDefects = defects.filter((d) => d.severity === "high").length;
@@ -52,7 +75,7 @@ const Results = () => {
             <div>
               <h1 className="text-4xl font-bold text-glow mb-2">Scan Results</h1>
               <p className="text-muted-foreground font-mono">
-                Scan completed: {new Date().toLocaleString()}
+                Scan completed: {scanDate.toLocaleString()}
               </p>
             </div>
           </div>
@@ -98,7 +121,7 @@ const Results = () => {
 
         {/* Defect Visualization */}
         <DefectOverlay
-          imageUrl="https://www.partfinder.me/assets/theme/pf-main/images/banner/parts/car-door.png"
+          imageUrl="/door.jpg"
           defects={defects}
         />
 
@@ -110,23 +133,27 @@ const Results = () => {
           <h3 className="font-mono text-lg font-bold uppercase tracking-wider mb-4">
             Analysis Summary
           </h3>
-          <div className="space-y-2 text-sm font-mono">
-            <p className="text-muted-foreground">
-              • Scan completed in 3 minutes 42 seconds
-            </p>
-            <p className="text-muted-foreground">
-              • Processed 127 image tiles
-            </p>
-            <p className="text-muted-foreground">
-              • Average confidence score: 87.3%
-            </p>
-            <p className="text-muted-foreground">
-              • YOLO model: YOLOv8-nano (defect detection)
-            </p>
-            <p className={criticalDefects > 0 ? "text-destructive font-bold" : "text-success font-bold"}>
-              • Quality Status: {criticalDefects > 0 ? "REQUIRES REVIEW" : "PASSED"}
-            </p>
-          </div>
+          {summary ? (
+            <div className="space-y-2 text-sm font-mono">
+              <p className="text-muted-foreground">
+                • Scan completed in {summary.scan_duration}
+              </p>
+              <p className="text-muted-foreground">
+                • Processed {summary.image_tiles} image tiles
+              </p>
+              <p className="text-muted-foreground">
+                • Average confidence score: {summary.avg_confidence}
+              </p>
+              <p className="text-muted-foreground">
+                • YOLO model: {summary.model_name}
+              </p>
+              <p className={summary.quality_status === "REQUIRES REVIEW" ? "text-destructive font-bold" : "text-success font-bold"}>
+                • Quality Status: {summary.quality_status}
+              </p>
+            </div>
+          ) : (
+            <p>Loading summary...</p>
+          )}
         </Card>
       </div>
     </div>

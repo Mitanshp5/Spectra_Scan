@@ -13,23 +13,7 @@ import { toast } from "sonner";
 const Dashboard = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"idle" | "scanning" | "processing" | "complete">("idle");
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      timestamp: new Date().toLocaleTimeString(),
-      message: "System initialized successfully",
-      type: "success",
-    },
-    {
-      timestamp: new Date().toLocaleTimeString(),
-      message: "Camera calibration complete",
-      type: "info",
-    },
-    {
-      timestamp: new Date().toLocaleTimeString(),
-      message: "YOLO model loaded",
-      type: "success",
-    },
-  ]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
   const [images, setImages] = useState<any[]>([]);
   const [progress, setProgress] = useState(0);
   const [scanStage, setScanStage] = useState("Ready");
@@ -52,55 +36,70 @@ const Dashboard = () => {
     addLog("Starting scan sequence", "info");
     toast.success("Scan initiated");
 
-    // Simulate scanning process
-    const scanInterval = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + 2;
-        if (newProgress >= 100) {
-          clearInterval(scanInterval);
-          setStatus("processing");
-          setScanStage("Processing images...");
-          addLog("Scan complete, processing data", "success");
-          
-          // Simulate processing
-          setTimeout(() => {
-            setStatus("complete");
-            setScanStage("Analysis complete");
-            addLog("Defect detection complete", "success");
-            addLog(`Found ${Math.floor(Math.random() * 10 + 5)} potential defects`, "warning");
-            toast.success("Scan analysis complete!");
-            
-            // Navigate to results after a short delay
-            setTimeout(() => {
-              navigate("/results");
-            }, 2000);
-          }, 3000);
-          
-          return 100;
+    try {
+      const response = await fetch("http://localhost:8000/api/scan", {
+        method: "POST",
+      });
+      const data = await response.json();
+      const { scan_id } = data;
+
+      if (!scan_id) {
+        throw new Error("Failed to retrieve scan ID");
+      }
+
+      addLog(`Scan initiated with ID: ${scan_id}`, "info");
+
+      const interval = setInterval(async () => {
+        const statusResponse = await fetch(
+          `http://localhost:8000/api/scan/status/${scan_id}`
+        );
+        const statusData = await statusResponse.json();
+
+        if (statusData.status === "not_found") {
+          clearInterval(interval);
+          addLog("Error: Scan ID not found on server.", "error");
+          toast.error("Scan failed: Invalid ID");
+          setStatus("idle");
+          return;
         }
+
+        setProgress(statusData.progress || 0);
+        setScanStage(statusData.stage || "Waiting for status...");
 
         // Add images during scan
-        if (newProgress % 10 === 0) {
-          const imageId = `IMG_${String(Math.floor(newProgress / 10)).padStart(3, "0")}`;
-          setImages((prev) => [
-            ...prev,
-            {
-              id: imageId,
-              url: `https://picsum.photos/seed/${imageId}/400/300`,
-              timestamp: new Date().toLocaleTimeString(),
-            },
-          ]);
-          addLog(`Captured image ${imageId}`, "info");
+        if (statusData.progress > 0 && statusData.progress % 10 < 5) { // Logic to add images less frequently
+          const imageId = `IMG_${String(Math.floor(statusData.progress / 10)).padStart(3, "0")}`;
+          if (!images.some(img => img.id === imageId)) {
+            setImages((prev) => [
+              ...prev,
+              {
+                id: imageId,
+                url: `https://picsum.photos/seed/${imageId}/400/300`,
+                timestamp: new Date().toLocaleTimeString(),
+              },
+            ]);
+            addLog(`Captured image ${imageId}`, "info");
+          }
         }
 
-        if (newProgress < 30) setScanStage("Scanning upper section...");
-        else if (newProgress < 60) setScanStage("Scanning middle section...");
-        else if (newProgress < 90) setScanStage("Scanning lower section...");
-        else setScanStage("Finalizing scan...");
+        if (statusData.status === "complete") {
+          clearInterval(interval);
+          setStatus("complete");
+          setScanStage("Analysis complete");
+          addLog("Defect detection complete", "success");
+          toast.success("Scan analysis complete!");
 
-        return newProgress;
-      });
-    }, 100);
+          setTimeout(() => {
+            navigate(`/results/${scan_id}`);
+          }, 2000);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error("Failed to start scan:", error);
+      addLog("Failed to start scan. Check server connection.", "error");
+      toast.error("Failed to start scan");
+      setStatus("idle");
+    }
   };
 
   const stopScan = () => {
