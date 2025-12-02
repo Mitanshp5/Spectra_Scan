@@ -10,10 +10,10 @@ from fastapi.responses import JSONResponse
 
 app = FastAPI()
 
-# Allow CORS for frontend development
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust if your frontend runs on a different port
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,7 +24,7 @@ client = MongoClient("mongodb://localhost:27017/")
 db = client["spectra_auto_scan"]
 scans_collection = db["scans"]
 
-# Helper to convert ObjectId to string for JSON serialization
+
 def json_helper(data):
     if isinstance(data, list):
         return [json_helper(item) for item in data]
@@ -51,7 +51,7 @@ class Defect(BaseModel):
     severity: Literal["high", "medium", "low"]
 
 def generate_random_defects(num_defects: int) -> List[dict]:
-    """Generates a list of random defects."""
+    #Generates a list of random defects.
     defect_types = ["Scratch", "Paint Bubble", "Dust Particle", "Orange Peel", "Color Mismatch"]
     severities = ["high", "medium", "low"]
     defects = []
